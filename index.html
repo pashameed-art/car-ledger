@@ -112,7 +112,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <label>Expense Type</label>
 <div class="row">
 
-<input id="expenseType" type="text" placeholder="Or type expense type" list="expenseTypeOptions" autocomplete="off" placeholder="Select or type Expense Type">
+<input id="expenseType" type="text" list="expenseTypeOptions" autocomplete="off" placeholder="Select or type Expense Type">
 <datalist id="expenseTypeOptions">
   <option value="Diesel">
   <option value="Tollgate">
@@ -255,7 +255,7 @@ async function editTrip(id){
 }
 async function editExpense(id){
  const item=(await all('expenses')).find(x=>x.id===id); if(!item)return;
- expenseDate.value=item.date;const knownExpenseTypes=['Diesel','Tollgate','Insurance','Tyre','Oil','Water Wash','Service','Other'];expenseType.value=item.type}expenseAmount.value=item.amount;expenseNotes.value=item.notes||'';
+ expenseDate.value=item.date;expenseType.value=item.type;expenseAmount.value=item.amount;expenseNotes.value=item.notes||'';
  if(confirm('Edit this expense? Tap OK, then save to create the corrected entry.')){
    await del('expenses',id); document.querySelector('[data-tab="expense"]').click();
  }
@@ -264,7 +264,7 @@ function calcTrip(){tripBalance.textContent=money(Number(rent.value||0)-Number(d
 async function removeTrip(id){if(confirm('Delete this trip?')){await del('trips',id);refresh()}}
 async function removeExpense(id){if(confirm('Delete this expense?')){await del('expenses',id);refresh()}}
 tripForm.addEventListener('submit',async e=>{e.preventDefault();await add('trips',{date:tripDate.value,place:place.value.trim(),rent:Number(rent.value),driver:Number(driver.value||0),notes:tripNotes.value.trim(),createdAt:Date.now()});tripForm.reset();tripDate.value=today();calcTrip();refresh();alert('Trip saved')});
-expenseForm.addEventListener('submit',async e=>{e.preventDefault();if(!expenseTypeValue){alert('Select or type an expense type.');return}await add('expenses',{date:expenseDate.value,type:expenseTypeValue,amount:Number(expenseAmount.value),notes:expenseNotes.value.trim(),createdAt:Date.now()});expenseForm.reset();expenseDate.value=today();refresh();alert('Expense saved')});
+expenseForm.addEventListener('submit',async e=>{e.preventDefault();const expenseTypeValue=(expenseType.value||'').trim();if(!expenseTypeValue){alert('Select or type an expense type.');return}await add('expenses',{date:expenseDate.value,type:expenseTypeValue,amount:Number(expenseAmount.value),notes:expenseNotes.value.trim(),createdAt:Date.now()});expenseForm.reset();expenseDate.value=today();refresh();alert('Expense saved')});
 rent.addEventListener('input',calcTrip);driver.addEventListener('input',calcTrip);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(b.dataset.tab).classList.add('active')});
 async function runGlobalSearch(){
@@ -373,7 +373,6 @@ restoreFile.addEventListener('change',e=>{const file=e.target.files[0];if(!file)
 (async()=>{await openDB();tripDate.value=today();expenseDate.value=today();dashMonth.value=today().slice(0,7);await refresh()})();
 
 globalSearch.addEventListener('input',runGlobalSearch);
-});
 tripSearch.addEventListener('input',refresh);
 tripFilterDate.addEventListener('change',refresh);
 expenseFilterType.addEventListener('change',refresh);
