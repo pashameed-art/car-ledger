@@ -47,7 +47,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.2</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.3</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -56,6 +56,14 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </nav>
 <main>
 <section id="dashboard" class="active">
+<div class="card no-print">
+<h3>⚡ Quick View</h3>
+<div class="actions">
+<button class="btn secondary" onclick="quickMonth('current')">This Month</button>
+<button class="btn secondary" onclick="quickMonth('previous')">Previous Month</button>
+<button class="btn secondary" onclick="quickToday()">Today</button>
+</div>
+</div>
   <div class="grid3">
     <div class="card stat"><span>Total Rent</span><strong id="sRent">₹0</strong></div>
     <div class="card stat"><span>Driver Paid</span><strong id="sDriver">₹0</strong></div>
@@ -193,6 +201,24 @@ async function refresh(){
  renderDashboardSummary();
 }
 
+function quickMonth(mode){
+ const d=new Date();
+ if(mode==='previous') d.setMonth(d.getMonth()-1);
+ dashMonth.value=d.toISOString().slice(0,7);
+ renderDashboardSummary();
+}
+async function quickToday(){
+ const d=today();
+ const trips=(await all('trips')).filter(x=>x.date===d), exps=(await all('expenses')).filter(x=>x.date===d);
+ const rent=trips.reduce((a,x)=>a+Number(x.rent),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),expense=exps.reduce((a,x)=>a+Number(x.amount),0);
+ dashSummary.innerHTML=`<hr><b>📅 Today — ${d}</b><div class="grid3" style="margin-top:10px">
+ <div><span class="muted">Rent</span><br><b>${money(rent)}</b></div>
+ <div><span class="muted">Driver</span><br><b>${money(driver)}</b></div>
+ <div><span class="muted">Balance</span><br><b>${money(rent-driver)}</b></div>
+ <div><span class="muted">Expense</span><br><b>${money(expense)}</b></div>
+ <div><span class="muted">Net Balance</span><br><b>${money(rent-driver-expense)}</b></div></div>`;
+ if(window.monthlyChart) monthlyChart.innerHTML='';
+}
 async function renderDashboardSummary(){
  const m=dashMonth?.value || today().slice(0,7);
  const trips=(await all('trips')).filter(x=>x.date.startsWith(m)), exps=(await all('expenses')).filter(x=>x.date.startsWith(m));
