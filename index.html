@@ -44,10 +44,16 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
  input,select,textarea,button{display:none!important}
  .item{padding:7px 0}
 }
-.report-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}.report-scroll table{min-width:560px}</style>
+.report-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}.report-scroll table{min-width:560px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.summary-item{background:#f5f8fa;border-radius:12px;padding:10px}
+.summary-item small{display:block;color:#6b747c;font-weight:600;margin-bottom:4px}
+.summary-item strong{font-size:18px}
+@media(max-width:480px){.summary-grid{grid-template-columns:1fr 1fr}}
+</style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.8</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.9</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -157,6 +163,13 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <div class="card" id="globalResults"><div class="empty">Search results will appear here.</div></div>
 <div class="card" id="reportBox"><div class="empty">Select dates and tap View Report.</div></div>
 <div class="card no-print">
+
+<div class="card" id="dailySummaryCard">
+  <h3>📅 Date-wise Daily Summary</h3>
+  <label for="dailySummaryDate">Select Date</label>
+  <input type="date" id="dailySummaryDate">
+  <div id="dailySummaryResult" class="summary-grid" style="margin-top:12px"></div>
+</div>
 <h3>Backup & Restore</h3>
 <p class="notice">Backup keeps all trips and expenses in one JSON file. Restore replaces the current app data after confirmation.</p>
 <div class="actions">
@@ -290,7 +303,7 @@ async function renderReport(){
  const exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
  const rent=trips.reduce((a,x)=>a+Number(x.rent),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0);
  reportBox.innerHTML=`<div class="report-scroll"><h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
- <div style="text-align:center;font-weight:700">REPORT V3.8</div>
+ <div style="text-align:center;font-weight:700">REPORT V3.9</div>
  <div style="text-align:center" class="muted">${formatReportDate(f)} to ${formatReportDate(t)}</div><hr>
  <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
@@ -386,6 +399,53 @@ expenseFilterType.addEventListener('change',refresh);
 expenseFilterDate.addEventListener('change',refresh);
 
 if('serviceWorker' in navigator){ navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!window.__swReloaded){window.__swReloaded=true;location.reload();} }); navigator.serviceWorker.register('sw.js?v=3.6',{updateViaCache:'none'}).catch(()=>{}); }
+</script>
+
+<script>
+function formatDailySummaryDate(value){
+  if(!value) return '';
+  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[3]+'-'+m[2]+'-'+m[1] : String(value);
+}
+async function updateDailySummary(){
+  const input=document.getElementById('dailySummaryDate');
+  const box=document.getElementById('dailySummaryResult');
+  if(!input || !box) return;
+  const date=input.value;
+  if(!date){
+    box.innerHTML='<div class="muted">Select a date to view the daily summary.</div>';
+    return;
+  }
+  try{
+    const [trips,expenses]=await Promise.all([getAllTrips(),getAllExpenses()]);
+    const dayTrips=trips.filter(x=>x.date===date);
+    const dayExpenses=expenses.filter(x=>x.date===date);
+    const rent=dayTrips.reduce((s,x)=>s+Number(x.rent||0),0);
+    const driver=dayTrips.reduce((s,x)=>s+Number(x.driver||0),0);
+    const balance=rent-driver;
+    const expense=dayExpenses.reduce((s,x)=>s+Number(x.amount||0),0);
+    const net=balance-expense;
+    box.innerHTML=`
+      <div class="summary-item"><small>Date</small><strong>${formatDailySummaryDate(date)}</strong></div>
+      <div class="summary-item"><small>Trips</small><strong>${dayTrips.length}</strong></div>
+      <div class="summary-item"><small>Total Rent</small><strong>₹${rent.toLocaleString('en-IN')}</strong></div>
+      <div class="summary-item"><small>Driver Paid</small><strong>₹${driver.toLocaleString('en-IN')}</strong></div>
+      <div class="summary-item"><small>Balance</small><strong>₹${balance.toLocaleString('en-IN')}</strong></div>
+      <div class="summary-item"><small>Total Expense</small><strong>₹${expense.toLocaleString('en-IN')}</strong></div>
+      <div class="summary-item" style="grid-column:1/-1"><small>Net Balance</small><strong>₹${net.toLocaleString('en-IN')}</strong></div>`;
+  }catch(err){
+    box.innerHTML='<div class="muted">Unable to load daily summary.</div>';
+    console.error(err);
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const input=document.getElementById('dailySummaryDate');
+  if(input){
+    input.value=new Date().toISOString().slice(0,10);
+    input.addEventListener('change',updateDailySummary);
+    setTimeout(updateDailySummary,100);
+  }
+});
 </script>
 </body>
 </html>
