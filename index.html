@@ -44,10 +44,10 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
  input,select,textarea,button{display:none!important}
  .item{padding:7px 0}
 }
-</style>
+.report-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}.report-scroll table{min-width:560px}</style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.6</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.7</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -282,8 +282,8 @@ async function renderReport(){
  const trips=(await all('trips')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
  const exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
  const rent=trips.reduce((a,x)=>a+Number(x.rent),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0);
- reportBox.innerHTML=`<h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
- <div style="text-align:center;font-weight:700">REPORT V2.1</div>
+ reportBox.innerHTML=`<div class="report-scroll"><h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
+ <div style="text-align:center;font-weight:700">REPORT V3.7</div>
  <div style="text-align:center" class="muted">${f} to ${t}</div><hr>
  <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
@@ -307,7 +307,7 @@ async function renderReport(){
  <div><span class="muted">Balance</span><br><b>${money(rent-driver)}</b></div>
  <div><span class="muted">Total Expense</span><br><b>${money(exp)}</b></div>
  <div><span class="muted">Net Balance</span><br><b>${money(rent-driver-exp)}</b></div>
- </div>`;
+ </div></div>`;
 }
 
 let driveToken=null;
