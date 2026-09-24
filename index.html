@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="description" content="CAR LEDGER - Car income and expense ledger">
+<link rel="manifest" href="manifest.json">
+<title>CAR LEDGER</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#17202a;--muted:#68737d;--primary:#111827;--line:#e5e7eb;--green:#087f5b;--red:#c92a2a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text)}
+header{background:var(--primary);color:#fff;padding:18px 16px 16px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:22px;letter-spacing:.5px}header small{opacity:.75}
+nav{display:flex;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:72px;z-index:4}
+nav button{flex:1;border:0;background:none;padding:13px 5px;font-weight:700;color:var(--muted)}
+nav button.active{color:var(--primary);border-bottom:3px solid var(--primary)}
+main{max-width:760px;margin:auto;padding:14px}
+section{display:none}section.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px #00000008}
+.stat{min-height:88px}.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{display:block;font-size:21px;margin-top:7px}
+label{display:block;font-size:13px;font-weight:700;margin:11px 0 5px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #d6dbe1;border-radius:10px;background:#fff;font-size:16px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#6b7280}
+button{cursor:pointer}.btn{border:0;border-radius:10px;padding:12px 15px;font-weight:800}.primary{background:var(--primary);color:#fff}.secondary{background:#eef0f2;color:#111827}.danger{background:#fff0f0;color:var(--red)}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.item{border-top:1px solid var(--line);padding:12px 0}.item:first-child{border-top:0}
+.item b{font-size:15px}.muted{color:var(--muted);font-size:12px}.amount{font-weight:800}
+.green{color:var(--green)}.red{color:var(--red)}
+.empty{text-align:center;color:var(--muted);padding:25px 8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.actions button{flex:1;min-width:120px}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.notice{font-size:12px;color:var(--muted);line-height:1.5}
+@media(max-width:520px){.grid3{grid-template-columns:1fr 1fr}.grid3 .stat:last-child{grid-column:1/-1}.row{flex-direction:column;align-items:stretch}}
+@media print{
+ header,nav,.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}section{display:block!important}main{max-width:none}
+}
+</style>
+</head>
+<body>
+<header><h1>🚗 CAR LEDGER</h1><small>Car income & expense management</small></header>
+<nav>
+<button class="active" data-tab="dashboard">Dashboard</button>
+<button data-tab="trip">Trip</button>
+<button data-tab="expense">Expense</button>
+<button data-tab="reports">Reports</button>
+</nav>
+<main>
+<section id="dashboard" class="active">
+  <div class="grid3">
+    <div class="card stat"><span>Total Rent</span><strong id="sRent">₹0</strong></div>
+    <div class="card stat"><span>Driver Paid</span><strong id="sDriver">₹0</strong></div>
+    <div class="card stat"><span>Balance</span><strong id="sBalance">₹0</strong></div>
+    <div class="card stat"><span>Total Expense</span><strong id="sExpense">₹0</strong></div>
+    <div class="card stat"><span>Net Balance</span><strong id="sNet">₹0</strong></div>
+  </div>
+  <div class="card">
+    <h3>Recent Trips</h3><div id="recentTrips"></div>
+  </div>
+  <div class="card">
+    <h3>Recent Expenses</h3><div id="recentExpenses"></div>
+  </div>
+</section>
+
+<section id="trip">
+<div class="card">
+<h3>Add Trip</h3>
+<form id="tripForm">
+<label>Date</label><input id="tripDate" type="date" required>
+<label>பயணம் செல்லும் இடம் (Place)</label><input id="place" type="text" placeholder="Example: Madurai to Chennai" required>
+<label>Rent Amount</label><input id="rent" type="number" min="0" step="0.01" placeholder="₹" required>
+<label>Driver படி</label><input id="driver" type="number" min="0" step="0.01" value="0" placeholder="₹">
+<div class="card" style="background:#f8fafc;margin-top:12px">
+<div class="row"><div><span class="muted">Balance</span><br><strong id="tripBalance">₹0</strong></div></div>
+</div>
+<label>Notes (optional)</label><textarea id="tripNotes" rows="2" placeholder="Optional"></textarea>
+<div class="actions"><button class="btn primary" type="submit">Save Trip</button><button class="btn secondary" type="reset">Clear</button></div>
+</form>
+</div>
+<div class="card"><h3>Trip History</h3><div id="tripList"></div></div>
+</section>
+
+<section id="expense">
+<div class="card">
+<h3>Add Expense</h3>
+<form id="expenseForm">
+<label>Date</label><input id="expenseDate" type="date" required>
+<label>Expense Type</label>
+<select id="expenseType">
+<option>Diesel</option><option>Tollgate</option><option>Insurance</option><option>Tyre</option><option>Oil</option><option>Water Wash</option><option>Service</option><option>Other</option>
+</select>
+<label>Amount</label><input id="expenseAmount" type="number" min="0" step="0.01" placeholder="₹" required>
+<label>Notes (optional)</label><textarea id="expenseNotes" rows="2" placeholder="Optional"></textarea>
+<div class="actions"><button class="btn primary" type="submit">Save Expense</button><button class="btn secondary" type="reset">Clear</button></div>
+</form>
+</div>
+<div class="card"><h3>Expense History</h3><div id="expenseList"></div></div>
+</section>
+
+<section id="reports">
+<div class="card no-print">
+<h3>Report</h3>
+<div class="row">
+<div><label>From</label><input id="fromDate" type="date"></div>
+<div><label>To</label><input id="toDate" type="date"></div>
+</div>
+<div class="actions">
+<button class="btn primary" onclick="renderReport()">View Report</button>
+<button class="btn secondary" onclick="window.print()">Print / Save PDF</button>
+</div>
+</div>
+<div class="card" id="reportBox"><div class="empty">Select dates and tap View Report.</div></div>
+<div class="card no-print">
+<h3>Backup & Restore</h3>
+<p class="notice">Backup keeps all trips and expenses in one JSON file. Restore replaces the current app data after confirmation.</p>
+<div class="actions">
+<button class="btn primary" onclick="backupData()">Backup Data</button>
+<button class="btn secondary" onclick="document.getElementById('restoreFile').click()">Restore Data</button>
+<input id="restoreFile" type="file" accept=".json,application/json" hidden>
+</div>
+</div>
+</section>
+</main>
+<script>
+const DB_NAME='car_ledger_db_v1', DB_VER=1;
+let db;
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+const today=()=>new Date().toISOString().slice(0,10);
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('trips'))d.createObjectStore('trips',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('expenses'))d.createObjectStore('expenses',{keyPath:'id',autoIncrement:true})};r.onsuccess=e=>{db=e.target.result;res()};r.onerror=()=>rej(r.error)})}
+function tx(store,mode='readonly'){return db.transaction(store,mode).objectStore(store)}
+function all(store){return new Promise((res,rej)=>{let r=tx(store).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function add(store,obj){return new Promise((res,rej)=>{let r=tx(store,'readwrite').add(obj);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function del(store,id){return new Promise((res,rej)=>{let r=tx(store,'readwrite').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+async function refresh(){
+ const trips=await all('trips'), exps=await all('expenses');
+ const rent=trips.reduce((a,x)=>a+Number(x.rent),0), driver=trips.reduce((a,x)=>a+Number(x.driver),0), exp=exps.reduce((a,x)=>a+Number(x.amount),0);
+ sRent.textContent=money(rent);sDriver.textContent=money(driver);sBalance.textContent=money(rent-driver);sExpense.textContent=money(exp);sNet.textContent=money(rent-driver-exp);
+ tripList.innerHTML=trips.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="item"><div class="row"><div><b>${esc(x.place)}</b><div class="muted">${x.date}${x.notes?' · '+esc(x.notes):''}</div></div><div style="text-align:right"><div class="amount">${money(x.rent)}</div><div class="muted">Driver ${money(x.driver)} · <span class="green">Bal ${money(x.rent-x.driver)}</span></div></div><button class="btn danger" onclick="removeTrip(${x.id})">Delete</button></div></div>`).join('')||'<div class="empty">No trips yet.</div>';
+ expenseList.innerHTML=exps.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="item"><div class="row"><div><b>${esc(x.type)}</b><div class="muted">${x.date}${x.notes?' · '+esc(x.notes):''}</div></div><div class="amount red">${money(x.amount)}</div><button class="btn danger" onclick="removeExpense(${x.id})">Delete</button></div></div>`).join('')||'<div class="empty">No expenses yet.</div>';
+ recentTrips.innerHTML=trips.sort((a,b)=>b.id-a.id).slice(0,5).map(x=>`<div class="item"><b>${esc(x.place)}</b><div class="muted">${x.date} · ${money(x.rent)} · Balance ${money(x.rent-x.driver)}</div></div>`).join('')||'<div class="empty">No trips yet.</div>';
+ recentExpenses.innerHTML=exps.sort((a,b)=>b.id-a.id).slice(0,5).map(x=>`<div class="item"><b>${esc(x.type)}</b><div class="muted">${x.date} · ${money(x.amount)}</div></div>`).join('')||'<div class="empty">No expenses yet.</div>';
+}
+function calcTrip(){tripBalance.textContent=money(Number(rent.value||0)-Number(driver.value||0))}
+async function removeTrip(id){if(confirm('Delete this trip?')){await del('trips',id);refresh()}}
+async function removeExpense(id){if(confirm('Delete this expense?')){await del('expenses',id);refresh()}}
+tripForm.addEventListener('submit',async e=>{e.preventDefault();await add('trips',{date:tripDate.value,place:place.value.trim(),rent:Number(rent.value),driver:Number(driver.value||0),notes:tripNotes.value.trim(),createdAt:Date.now()});tripForm.reset();tripDate.value=today();calcTrip();refresh();alert('Trip saved')});
+expenseForm.addEventListener('submit',async e=>{e.preventDefault();await add('expenses',{date:expenseDate.value,type:expenseType.value,amount:Number(expenseAmount.value),notes:expenseNotes.value.trim(),createdAt:Date.now()});expenseForm.reset();expenseDate.value=today();refresh();alert('Expense saved')});
+rent.addEventListener('input',calcTrip);driver.addEventListener('input',calcTrip);
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(b.dataset.tab).classList.add('active')});
+async function renderReport(){
+ const f=fromDate.value||'0000-00-00',t=toDate.value||'9999-99-99',trips=(await all('trips')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)),exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date));
+ const rent=trips.reduce((a,x)=>a+x.rent,0),driver=trips.reduce((a,x)=>a+x.driver,0),exp=exps.reduce((a,x)=>a+x.amount,0);
+ reportBox.innerHTML=`<h2>CAR LEDGER REPORT</h2><div class="muted">${f} to ${t}</div><hr><div class="grid3"><div><span class="muted">Rent</span><br><b>${money(rent)}</b></div><div><span class="muted">Driver</span><br><b>${money(driver)}</b></div><div><span class="muted">Balance</span><br><b>${money(rent-driver)}</b></div><div><span class="muted">Expense</span><br><b>${money(exp)}</b></div><div><span class="muted">Net Balance</span><br><b>${money(rent-driver-exp)}</b></div></div><hr><h3>Trips</h3>${trips.map(x=>`<div class="item"><b>${x.date}</b> · ${esc(x.place)} · Rent ${money(x.rent)} · Driver ${money(x.driver)} · Balance ${money(x.rent-x.driver)}</div>`).join('')||'<div class="empty">No trips.</div>'}<h3>Expenses</h3>${exps.map(x=>`<div class="item"><b>${x.date}</b> · ${esc(x.type)} · ${money(x.amount)}${x.notes?' · '+esc(x.notes):''}</div>`).join('')||'<div class="empty">No expenses.</div>'}`;
+}
+async function backupData(){
+ const data={app:'CAR LEDGER',version:1,exportedAt:new Date().toISOString(),trips:await all('trips'),expenses:await all('expenses')};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='CAR_LEDGER_Backup_'+today()+'.json';a.click();URL.revokeObjectURL(a.href)
+}
+restoreFile.addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.trips)||!Array.isArray(d.expenses))throw Error();if(!confirm('Restore backup? Current data will be replaced.'))return;for(const x of await all('trips'))await del('trips',x.id);for(const x of await all('expenses'))await del('expenses',x.id);for(const x of d.trips){const y={...x};delete y.id;await add('trips',y)}for(const x of d.expenses){const y={...x};delete y.id;await add('expenses',y)}await refresh();alert('Restore completed')}catch(err){alert('Invalid CAR LEDGER backup file')}};r.readAsText(file);e.target.value=''});
+
+(async()=>{await openDB();tripDate.value=today();expenseDate.value=today();await refresh()})();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
