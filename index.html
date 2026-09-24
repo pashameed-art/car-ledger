@@ -47,7 +47,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.0</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.1</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -102,9 +102,14 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <form id="expenseForm">
 <label>Date</label><input id="expenseDate" type="date" required>
 <label>Expense Type</label>
-<select id="expenseType">
+<div class="row">
+<select id="expenseTypeSelect">
+<option value="">Select Type</option>
 <option>Diesel</option><option>Tollgate</option><option>Insurance</option><option>Tyre</option><option>Oil</option><option>Water Wash</option><option>Service</option><option>Other</option>
 </select>
+<input id="expenseType" type="text" placeholder="Or type expense type">
+</div>
+<div class="notice">Select an existing type or type a new expense type.</div>
 <label>Amount</label><input id="expenseAmount" type="number" min="0" step="0.01" placeholder="₹" required>
 <label>Notes (optional)</label><textarea id="expenseNotes" rows="2" placeholder="Optional"></textarea>
 <div class="actions"><button class="btn primary" type="submit">Save Expense</button><button class="btn secondary" type="reset">Clear</button></div>
@@ -218,7 +223,7 @@ async function editTrip(id){
 }
 async function editExpense(id){
  const item=(await all('expenses')).find(x=>x.id===id); if(!item)return;
- expenseDate.value=item.date;expenseType.value=item.type;expenseAmount.value=item.amount;expenseNotes.value=item.notes||'';
+ expenseDate.value=item.date;const knownExpenseTypes=['Diesel','Tollgate','Insurance','Tyre','Oil','Water Wash','Service','Other'];if(knownExpenseTypes.includes(item.type)){expenseTypeSelect.value=item.type;expenseType.value=''}else{expenseTypeSelect.value='';expenseType.value=item.type}expenseAmount.value=item.amount;expenseNotes.value=item.notes||'';
  if(confirm('Edit this expense? Tap OK, then save to create the corrected entry.')){
    await del('expenses',id); document.querySelector('[data-tab="expense"]').click();
  }
@@ -227,7 +232,7 @@ function calcTrip(){tripBalance.textContent=money(Number(rent.value||0)-Number(d
 async function removeTrip(id){if(confirm('Delete this trip?')){await del('trips',id);refresh()}}
 async function removeExpense(id){if(confirm('Delete this expense?')){await del('expenses',id);refresh()}}
 tripForm.addEventListener('submit',async e=>{e.preventDefault();await add('trips',{date:tripDate.value,place:place.value.trim(),rent:Number(rent.value),driver:Number(driver.value||0),notes:tripNotes.value.trim(),createdAt:Date.now()});tripForm.reset();tripDate.value=today();calcTrip();refresh();alert('Trip saved')});
-expenseForm.addEventListener('submit',async e=>{e.preventDefault();await add('expenses',{date:expenseDate.value,type:expenseType.value,amount:Number(expenseAmount.value),notes:expenseNotes.value.trim(),createdAt:Date.now()});expenseForm.reset();expenseDate.value=today();refresh();alert('Expense saved')});
+expenseForm.addEventListener('submit',async e=>{e.preventDefault();const expenseTypeValue=(expenseType.value.trim()||expenseTypeSelect.value).trim();if(!expenseTypeValue){alert('Select or type an expense type.');return}await add('expenses',{date:expenseDate.value,type:expenseTypeValue,amount:Number(expenseAmount.value),notes:expenseNotes.value.trim(),createdAt:Date.now()});expenseForm.reset();expenseDate.value=today();expenseTypeSelect.value='';refresh();alert('Expense saved')});
 rent.addEventListener('input',calcTrip);driver.addEventListener('input',calcTrip);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(b.dataset.tab).classList.add('active')});
 async function runGlobalSearch(){
@@ -336,6 +341,7 @@ restoreFile.addEventListener('change',e=>{const file=e.target.files[0];if(!file)
 (async()=>{await openDB();tripDate.value=today();expenseDate.value=today();dashMonth.value=today().slice(0,7);await refresh()})();
 
 globalSearch.addEventListener('input',runGlobalSearch);
+expenseTypeSelect.addEventListener('change',()=>{if(expenseTypeSelect.value)expenseType.value='';});
 tripSearch.addEventListener('input',refresh);
 tripFilterDate.addEventListener('change',refresh);
 expenseFilterType.addEventListener('change',refresh);
