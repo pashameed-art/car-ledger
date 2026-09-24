@@ -47,7 +47,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .report-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}.report-scroll table{min-width:560px}</style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.7</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.8</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -179,6 +179,13 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </section>
 </main>
 <script>
+function formatReportDate(value){
+  if(!value) return '';
+  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[3]+'-'+m[2]+'-'+m[1] : String(value);
+}
+</script>
+<script>
 const DB_NAME='car_ledger_db_v1', DB_VER=1;
 let db;
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
@@ -283,15 +290,15 @@ async function renderReport(){
  const exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
  const rent=trips.reduce((a,x)=>a+Number(x.rent),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0);
  reportBox.innerHTML=`<div class="report-scroll"><h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
- <div style="text-align:center;font-weight:700">REPORT V3.7</div>
- <div style="text-align:center" class="muted">${f} to ${t}</div><hr>
+ <div style="text-align:center;font-weight:700">REPORT V3.8</div>
+ <div style="text-align:center" class="muted">${formatReportDate(f)} to ${formatReportDate(t)}</div><hr>
  <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Place</th>
  <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Rent</th>
  <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Driver</th>
  <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Balance</th></tr>
- ${trips.map(x=>`<tr><td style="padding:6px;border-bottom:1px solid #ddd">${x.date}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.place)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.rent)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.driver)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.rent-x.driver)}</td></tr>`).join('')||'<tr><td colspan="5" style="padding:12px;text-align:center">No trips</td></tr>'}
+ ${trips.map(x=>`<tr><td style="padding:6px;border-bottom:1px solid #ddd">${formatReportDate(x.date)}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.place)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.rent)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.driver)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.rent-x.driver)}</td></tr>`).join('')||'<tr><td colspan="5" style="padding:12px;text-align:center">No trips</td></tr>'}
  </table>
  <h3>Expense</h3>
  <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
@@ -299,7 +306,7 @@ async function renderReport(){
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Type</th>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Notes</th>
  <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Amount</th></tr>
- ${exps.map(x=>`<tr><td style="padding:6px;border-bottom:1px solid #ddd">${x.date}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.type)}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.notes||'')}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.amount)}</td></tr>`).join('')||'<tr><td colspan="4" style="padding:12px;text-align:center">No expenses</td></tr>'}
+ ${exps.map(x=>`<tr><td style="padding:6px;border-bottom:1px solid #ddd">${formatReportDate(x.date)}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.type)}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.notes||'')}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.amount)}</td></tr>`).join('')||'<tr><td colspan="4" style="padding:12px;text-align:center">No expenses</td></tr>'}
  </table>
  <hr><div class="grid3">
  <div><span class="muted">Total Rent</span><br><b>${money(rent)}</b></div>
