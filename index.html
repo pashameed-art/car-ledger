@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <meta name="description" content="CAR LEDGER - Car income and expense ledger">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json"><link rel="apple-touch-icon" href="./icon-192.png">
 <title>CAR LEDGER</title>
 <style>
 :root{--bg:#eef7f7;--card:#ffffff;--text:#14202b;--muted:#64727c;--primary:#102a43;--accent:#0f766e;--accent2:#14b8a6;--line:#d7e5e5;--green:#087f5b;--red:#c92a2a}
@@ -53,7 +53,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V4.0</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V4.1</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -305,7 +305,7 @@ async function renderReport(){
  const exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
  const rent=trips.reduce((a,x)=>a+Number(x.rent),0),diesel=trips.reduce((a,x)=>a+Number(x.diesel||0),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0),totalExpense=exp+diesel;
  reportBox.innerHTML=`<div class="report-scroll"><h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
- <div style="text-align:center;font-weight:700">REPORT V4.0</div>
+ <div style="text-align:center;font-weight:700">REPORT V4.1</div>
  <div style="text-align:center" class="muted">${formatReportDate(f)} to ${formatReportDate(t)}</div><hr>
  <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
