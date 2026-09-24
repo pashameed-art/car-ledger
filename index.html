@@ -47,7 +47,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 </head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V2.1</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V2.2</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -122,7 +122,10 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 
 <section id="reports">
 <div class="card no-print">
-<h3>Report</h3>
+<h3>📊 Report & Search</h3>
+<div class="row">
+<div><label>Global Search</label><input id="globalSearch" placeholder="Place / Expense / Notes"></div>
+</div>
 <div class="row">
 <div><label>From</label><input id="fromDate" type="date"></div>
 <div><label>To</label><input id="toDate" type="date"></div>
@@ -132,6 +135,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <button class="btn secondary" onclick="window.print()">Print / Save PDF</button>
 </div>
 </div>
+<div class="card" id="globalResults"><div class="empty">Search results will appear here.</div></div>
 <div class="card" id="reportBox"><div class="empty">Select dates and tap View Report.</div></div>
 <div class="card no-print">
 <h3>Backup & Restore</h3>
@@ -189,6 +193,10 @@ async function renderDashboardSummary(){
  ${Object.entries(places).sort((a,b)=>b[1]-a[1]).map(([p,v])=>`<div class="item"><span>${esc(p)}</span><span class="amount green" style="float:right">${money(v)}</span></div>`).join('')||'<div class="empty">No trips this month.</div>'}
  <hr><b>⛽ Expense-wise</b>
  ${Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([p,v])=>`<div class="item"><span>${esc(p)}</span><span class="amount red" style="float:right">${money(v)}</span></div>`).join('')||'<div class="empty">No expenses this month.</div>'}`;
+ const days={}; trips.forEach(x=>days[x.date]=(days[x.date]||0)+Number(x.rent)-Number(x.driver));
+ const vals=Object.values(days), max=Math.max(1,...vals);
+ monthlyChart.innerHTML=`<hr><b>📈 Daily Balance</b>`+
+ Object.entries(days).sort().map(([d,v])=>`<div class="item"><div class="muted">${d}</div><div style="background:#e5e7eb;border-radius:8px;height:10px"><div style="width:${Math.max(2,v/max*100)}%;background:#111827;height:10px;border-radius:8px"></div></div><div class="amount">${money(v)}</div></div>`).join('')||'<div class="empty">No daily data.</div>';
 }
 async function editTrip(id){
  const item=(await all('trips')).find(x=>x.id===id); if(!item)return;
@@ -211,6 +219,16 @@ tripForm.addEventListener('submit',async e=>{e.preventDefault();await add('trips
 expenseForm.addEventListener('submit',async e=>{e.preventDefault();await add('expenses',{date:expenseDate.value,type:expenseType.value,amount:Number(expenseAmount.value),notes:expenseNotes.value.trim(),createdAt:Date.now()});expenseForm.reset();expenseDate.value=today();refresh();alert('Expense saved')});
 rent.addEventListener('input',calcTrip);driver.addEventListener('input',calcTrip);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(b.dataset.tab).classList.add('active')});
+async function runGlobalSearch(){
+ const q=(globalSearch?.value||'').trim().toLowerCase();
+ if(!q){globalResults.innerHTML='<div class="empty">Type something to search.</div>';return}
+ const trips=(await all('trips')).filter(x=>`${x.place} ${x.notes||''} ${x.date}`.toLowerCase().includes(q));
+ const exps=(await all('expenses')).filter(x=>`${x.type} ${x.notes||''} ${x.date}`.toLowerCase().includes(q));
+ globalResults.innerHTML=`<h3>🔎 Search Results</h3>
+ ${trips.map(x=>`<div class="item"><b>Trip</b> · ${esc(x.date)} · ${esc(x.place)} · ${money(x.rent)} · Balance ${money(x.rent-x.driver)}</div>`).join('')}
+ ${exps.map(x=>`<div class="item"><b>Expense</b> · ${esc(x.date)} · ${esc(x.type)} · ${money(x.amount)}</div>`).join('')}
+ ${(!trips.length&&!exps.length)?'<div class="empty">No results found.</div>':''}`;
+}
 async function renderReport(){
  const f=fromDate.value||'0000-00-00',t=toDate.value||'9999-99-99';
  const trips=(await all('trips')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
@@ -250,6 +268,8 @@ async function backupData(){
 restoreFile.addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.trips)||!Array.isArray(d.expenses))throw Error();if(!confirm('Restore backup? Current data will be replaced.'))return;for(const x of await all('trips'))await del('trips',x.id);for(const x of await all('expenses'))await del('expenses',x.id);for(const x of d.trips){const y={...x};delete y.id;await add('trips',y)}for(const x of d.expenses){const y={...x};delete y.id;await add('expenses',y)}await refresh();alert('Restore completed')}catch(err){alert('Invalid CAR LEDGER backup file')}};r.readAsText(file);e.target.value=''});
 
 (async()=>{await openDB();tripDate.value=today();expenseDate.value=today();dashMonth.value=today().slice(0,7);await refresh()})();
+
+globalSearch.addEventListener('input',runGlobalSearch);
 tripSearch.addEventListener('input',refresh);
 tripFilterDate.addEventListener('change',refresh);
 expenseFilterType.addEventListener('change',refresh);
