@@ -47,7 +47,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.4</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.6</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -378,7 +378,7 @@ tripFilterDate.addEventListener('change',refresh);
 expenseFilterType.addEventListener('change',refresh);
 expenseFilterDate.addEventListener('change',refresh);
 
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){ navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!window.__swReloaded){window.__swReloaded=true;location.reload();} }); navigator.serviceWorker.register('sw.js?v=3.6',{updateViaCache:'none'}).catch(()=>{}); }
 </script>
 </body>
 </html>
