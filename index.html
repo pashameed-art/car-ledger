@@ -45,9 +45,9 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
  .item{padding:7px 0}
 }
 </style>
-</head>
+<script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V2.2</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.0</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -145,6 +145,17 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <button class="btn secondary" onclick="document.getElementById('restoreFile').click()">Restore Data</button>
 <input id="restoreFile" type="file" accept=".json,application/json" hidden>
 </div>
+<hr>
+<h3>☁️ Google Drive Backup</h3>
+<p class="notice">V3 supports secure Google Drive backup/restore. Add your Google OAuth Client ID in Settings below before connecting.</p>
+<label>Google OAuth Client ID</label>
+<input id="googleClientId" placeholder="xxxxxxxx.apps.googleusercontent.com">
+<div class="actions">
+<button class="btn primary" onclick="connectGoogleDrive()">Connect Google Drive</button>
+<button class="btn secondary" onclick="driveBackup()">Backup to Drive</button>
+<button class="btn secondary" onclick="driveRestore()">Restore from Drive</button>
+</div>
+<div id="driveStatus" class="notice" style="margin-top:8px">Not connected.</div>
 </div>
 </section>
 </main>
@@ -261,8 +272,63 @@ async function renderReport(){
  <div><span class="muted">Net Balance</span><br><b>${money(rent-driver-exp)}</b></div>
  </div>`;
 }
+
+let driveToken=null;
+function driveStatus(msg){ if(window.driveStatus) window.driveStatus.textContent=msg; }
+function googleId(){ return (googleClientId?.value||'').trim(); }
+function connectGoogleDrive(){
+ const clientId=googleId();
+ if(!clientId){alert('Google OAuth Client ID is required.');googleClientId.focus();return}
+ if(!window.google?.accounts?.oauth2){alert('Google sign-in library is still loading. Please try again.');return}
+ const client=google.accounts.oauth2.initTokenClient({
+   client_id:clientId,
+   scope:'https://www.googleapis.com/auth/drive.file',
+   callback:(resp)=>{if(resp.error){driveToken=null;driveStatus('Connection failed: '+resp.error);return}driveToken=resp.access_token;driveStatus('Google Drive connected.');}
+ });
+ client.requestAccessToken();
+}
+async function getBackupObject(){
+ return {app:'CAR LEDGER',version:3,exportedAt:new Date().toISOString(),trips:await all('trips'),expenses:await all('expenses')};
+}
+async function driveBackup(){
+ if(!driveToken){alert('Connect Google Drive first.');return}
+ try{
+   driveStatus('Creating backup…');
+   const data=await getBackupObject();
+   const body=JSON.stringify(data,null,2);
+   const metadata={name:'CAR_LEDGER_Backup.json',mimeType:'application/json'};
+   const form=new FormData();
+   form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+   form.append('file',new Blob([body],{type:'application/json'}));
+   const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:'Bearer '+driveToken},body:form});
+   const j=await r.json();
+   if(!r.ok)throw Error(j.error?.message||'Upload failed');
+   driveStatus('Backup uploaded to Google Drive. File ID: '+j.id);
+ }catch(e){driveStatus('Drive backup failed: '+e.message)}
+}
+async function driveRestore(){
+ if(!driveToken){alert('Connect Google Drive first.');return}
+ try{
+   driveStatus('Finding backup…');
+   const q=encodeURIComponent("name='CAR_LEDGER_Backup.json' and trashed=false");
+   const r=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&orderBy=modifiedTime desc&pageSize=1&fields=files(id,name,modifiedTime)',{headers:{Authorization:'Bearer '+driveToken}});
+   const j=await r.json();
+   if(!r.ok)throw Error(j.error?.message||'Drive search failed');
+   if(!j.files?.length){alert('No CAR_LEDGER_Backup.json found in your Google Drive.');driveStatus('No backup found.');return}
+   if(!confirm('Restore the latest CAR LEDGER backup from Google Drive? Current data will be replaced.'))return;
+   const id=j.files[0].id;
+   const rr=await fetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'?alt=media',{headers:{Authorization:'Bearer '+driveToken}});
+   const d=await rr.json();
+   if(!Array.isArray(d.trips)||!Array.isArray(d.expenses))throw Error('Invalid CAR LEDGER backup');
+   for(const x of await all('trips'))await del('trips',x.id);
+   for(const x of await all('expenses'))await del('expenses',x.id);
+   for(const x of d.trips){const y={...x};delete y.id;await add('trips',y)}
+   for(const x of d.expenses){const y={...x};delete y.id;await add('expenses',y)}
+   await refresh();driveStatus('Restore completed successfully.');alert('Google Drive restore completed.');
+ }catch(e){driveStatus('Drive restore failed: '+e.message)}
+}
 async function backupData(){
- const data={app:'CAR LEDGER',version:1,exportedAt:new Date().toISOString(),trips:await all('trips'),expenses:await all('expenses')};
+ const data={app:'CAR LEDGER',version:3,exportedAt:new Date().toISOString(),trips:await all('trips'),expenses:await all('expenses')};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='CAR_LEDGER_Backup_'+today()+'.json';a.click();URL.revokeObjectURL(a.href)
 }
 restoreFile.addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.trips)||!Array.isArray(d.expenses))throw Error();if(!confirm('Restore backup? Current data will be replaced.'))return;for(const x of await all('trips'))await del('trips',x.id);for(const x of await all('expenses'))await del('expenses',x.id);for(const x of d.trips){const y={...x};delete y.id;await add('trips',y)}for(const x of d.expenses){const y={...x};delete y.id;await add('expenses',y)}await refresh();alert('Restore completed')}catch(err){alert('Invalid CAR LEDGER backup file')}};r.readAsText(file);e.target.value=''});
