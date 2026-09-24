@@ -8,13 +8,13 @@
 <link rel="manifest" href="manifest.json">
 <title>CAR LEDGER</title>
 <style>
-:root{--bg:#f4f6f8;--card:#fff;--text:#17202a;--muted:#68737d;--primary:#111827;--line:#e5e7eb;--green:#087f5b;--red:#c92a2a}
+:root{--bg:#eef7f7;--card:#ffffff;--text:#14202b;--muted:#64727c;--primary:#102a43;--accent:#0f766e;--accent2:#14b8a6;--line:#d7e5e5;--green:#087f5b;--red:#c92a2a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text)}
-header{background:var(--primary);color:#fff;padding:18px 16px 16px;position:sticky;top:0;z-index:5}
+header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary) 55%,var(--accent) 100%);color:#fff;padding:18px 16px 16px;position:sticky;top:0;z-index:5;box-shadow:0 5px 18px #102a4330}
 header h1{margin:0;font-size:22px;letter-spacing:.5px}header small{opacity:.75}
-nav{display:flex;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:72px;z-index:4}
+nav{display:flex;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:72px;z-index:4;box-shadow:0 2px 10px #102a4310}
 nav button{flex:1;border:0;background:none;padding:13px 5px;font-weight:700;color:var(--muted)}
-nav button.active{color:var(--primary);border-bottom:3px solid var(--primary)}
+nav button.active{color:var(--accent);border-bottom:3px solid var(--accent2);background:linear-gradient(#fff,#f0fbfa)}
 main{max-width:760px;margin:auto;padding:14px}
 section{display:none}section.active{display:block}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -22,7 +22,7 @@ section{display:none}section.active{display:block}
 .stat{min-height:88px}.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{display:block;font-size:21px;margin-top:7px}
 label{display:block;font-size:13px;font-weight:700;margin:11px 0 5px}
 input,select,textarea{width:100%;padding:12px;border:1px solid #d6dbe1;border-radius:10px;background:#fff;font-size:16px;outline:none}
-input:focus,select:focus,textarea:focus{border-color:#6b7280}
+input:focus,select:focus,textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px #14b8a61c}
 button{cursor:pointer}.btn{border:0;border-radius:10px;padding:12px 15px;font-weight:800}.primary{background:var(--primary);color:#fff}.secondary{background:#eef0f2;color:#111827}.danger{background:#fff0f0;color:var(--red)}
 .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
 .item{border-top:1px solid var(--line);padding:12px 0}.item:first-child{border-top:0}
@@ -47,7 +47,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.1</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V3.2</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
