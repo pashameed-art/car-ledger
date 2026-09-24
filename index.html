@@ -35,12 +35,19 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .notice{font-size:12px;color:var(--muted);line-height:1.5}
 @media(max-width:520px){.grid3{grid-template-columns:1fr 1fr}.grid3 .stat:last-child{grid-column:1/-1}.row{flex-direction:column;align-items:stretch}}
 @media print{
- header,nav,.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}section{display:block!important}main{max-width:none}
+ @page{margin:12mm}
+ header,nav,.no-print{display:none!important}
+ body{background:#fff;font-size:11px}
+ .card{box-shadow:none;break-inside:avoid;border:0;padding:6px 0;margin-bottom:8px}
+ section{display:block!important}
+ main{max-width:none;padding:0}
+ input,select,textarea,button{display:none!important}
+ .item{padding:7px 0}
 }
 </style>
 </head>
 <body>
-<header><h1>🚗 CAR LEDGER</h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V2.1</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -205,9 +212,36 @@ expenseForm.addEventListener('submit',async e=>{e.preventDefault();await add('ex
 rent.addEventListener('input',calcTrip);driver.addEventListener('input',calcTrip);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(b.dataset.tab).classList.add('active')});
 async function renderReport(){
- const f=fromDate.value||'0000-00-00',t=toDate.value||'9999-99-99',trips=(await all('trips')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)),exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date));
- const rent=trips.reduce((a,x)=>a+x.rent,0),driver=trips.reduce((a,x)=>a+x.driver,0),exp=exps.reduce((a,x)=>a+x.amount,0);
- reportBox.innerHTML=`<h2>CAR LEDGER REPORT</h2><div class="muted">${f} to ${t}</div><hr><div class="grid3"><div><span class="muted">Rent</span><br><b>${money(rent)}</b></div><div><span class="muted">Driver</span><br><b>${money(driver)}</b></div><div><span class="muted">Balance</span><br><b>${money(rent-driver)}</b></div><div><span class="muted">Expense</span><br><b>${money(exp)}</b></div><div><span class="muted">Net Balance</span><br><b>${money(rent-driver-exp)}</b></div></div><hr><h3>Trips</h3>${trips.map(x=>`<div class="item"><b>${x.date}</b> · ${esc(x.place)} · Rent ${money(x.rent)} · Driver ${money(x.driver)} · Balance ${money(x.rent-x.driver)}</div>`).join('')||'<div class="empty">No trips.</div>'}<h3>Expenses</h3>${exps.map(x=>`<div class="item"><b>${x.date}</b> · ${esc(x.type)} · ${money(x.amount)}${x.notes?' · '+esc(x.notes):''}</div>`).join('')||'<div class="empty">No expenses.</div>'}`;
+ const f=fromDate.value||'0000-00-00',t=toDate.value||'9999-99-99';
+ const trips=(await all('trips')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
+ const exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
+ const rent=trips.reduce((a,x)=>a+Number(x.rent),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0);
+ reportBox.innerHTML=`<h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
+ <div style="text-align:center;font-weight:700">REPORT V2.1</div>
+ <div style="text-align:center" class="muted">${f} to ${t}</div><hr>
+ <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
+ <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
+ <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Place</th>
+ <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Rent</th>
+ <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Driver</th>
+ <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Balance</th></tr>
+ ${trips.map(x=>`<tr><td style="padding:6px;border-bottom:1px solid #ddd">${x.date}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.place)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.rent)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.driver)}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.rent-x.driver)}</td></tr>`).join('')||'<tr><td colspan="5" style="padding:12px;text-align:center">No trips</td></tr>'}
+ </table>
+ <h3>Expense</h3>
+ <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
+ <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
+ <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Type</th>
+ <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Notes</th>
+ <th style="text-align:right;border-bottom:1px solid #222;padding:6px">Amount</th></tr>
+ ${exps.map(x=>`<tr><td style="padding:6px;border-bottom:1px solid #ddd">${x.date}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.type)}</td><td style="padding:6px;border-bottom:1px solid #ddd">${esc(x.notes||'')}</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:right">${money(x.amount)}</td></tr>`).join('')||'<tr><td colspan="4" style="padding:12px;text-align:center">No expenses</td></tr>'}
+ </table>
+ <hr><div class="grid3">
+ <div><span class="muted">Total Rent</span><br><b>${money(rent)}</b></div>
+ <div><span class="muted">Driver Paid</span><br><b>${money(driver)}</b></div>
+ <div><span class="muted">Balance</span><br><b>${money(rent-driver)}</b></div>
+ <div><span class="muted">Total Expense</span><br><b>${money(exp)}</b></div>
+ <div><span class="muted">Net Balance</span><br><b>${money(rent-driver-exp)}</b></div>
+ </div>`;
 }
 async function backupData(){
  const data={app:'CAR LEDGER',version:1,exportedAt:new Date().toISOString(),trips:await all('trips'),expenses:await all('expenses')};
