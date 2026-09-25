@@ -56,7 +56,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V4.4</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V4.5</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -286,19 +286,33 @@ async function editTrip(id){
  const item=(await all('trips')).find(x=>x.id===id); if(!item)return;
  tripDate.value=item.date;place.value=item.place;rent.value=item.rent;tripDiesel.value=item.diesel||0;driver.value=item.driver;tripNotes.value=item.notes||'';calcTrip();
  if(confirm('Edit this trip? Tap OK, then save to create the corrected entry.')){
-   await del('trips',id); document.querySelector('[data-tab="trip"]').click();
+   await del('trips',id); await refresh(); if(typeof renderReport==='function' && (fromDate?.value || toDate?.value)) await renderReport(); document.querySelector('[data-tab="trip"]').click();
  }
 }
 async function editExpense(id){
  const item=(await all('expenses')).find(x=>x.id===id); if(!item)return;
  expenseDate.value=item.date;expenseType.value=item.type;expenseAmount.value=item.amount;expenseNotes.value=item.notes||'';
  if(confirm('Edit this expense? Tap OK, then save to create the corrected entry.')){
-   await del('expenses',id); document.querySelector('[data-tab="expense"]').click();
+   await del('expenses',id); await refresh(); if(typeof renderReport==='function' && (fromDate?.value || toDate?.value)) await renderReport(); document.querySelector('[data-tab="expense"]').click();
  }
 }
 function calcTrip(){tripBalance.textContent=money(Number(rent.value||0)-Number(tripDiesel.value||0)-Number(driver.value||0))}
-async function removeTrip(id){if(confirm('Delete this trip?')){await del('trips',id);refresh()}}
-async function removeExpense(id){if(confirm('Delete this expense?')){await del('expenses',id);refresh()}}
+async function removeTrip(id){
+ if(confirm('Delete this trip?')){
+   await del('trips',id);
+   await refresh();
+   if(document.getElementById('reportBox') && (fromDate?.value || toDate?.value)) await renderReport();
+   if(typeof updateDailySummary==='function') await updateDailySummary();
+ }
+}
+async function removeExpense(id){
+ if(confirm('Delete this expense?')){
+   await del('expenses',id);
+   await refresh();
+   if(document.getElementById('reportBox') && (fromDate?.value || toDate?.value)) await renderReport();
+   if(typeof updateDailySummary==='function') await updateDailySummary();
+ }
+}
 tripForm.addEventListener('submit',async e=>{e.preventDefault();await add('trips',{date:tripDate.value,place:place.value.trim(),rent:Number(rent.value),diesel:Number(tripDiesel.value||0),driver:Number(driver.value||0),notes:tripNotes.value.trim(),createdAt:Date.now()});tripForm.reset();tripDate.value=today();calcTrip();refresh();showToast('Trip saved')});
 expenseForm.addEventListener('submit',async e=>{e.preventDefault();const expenseTypeValue=(expenseType.value||'').trim();if(!expenseTypeValue){alert('Select or type an expense type.');return}await add('expenses',{date:expenseDate.value,type:expenseTypeValue,amount:Number(expenseAmount.value),notes:expenseNotes.value.trim(),createdAt:Date.now()});expenseForm.reset();expenseDate.value=today();refresh();alert('Expense saved')});
 rent.addEventListener('input',calcTrip);tripDiesel.addEventListener('input',calcTrip);driver.addEventListener('input',calcTrip);
@@ -319,7 +333,7 @@ async function renderReport(){
  const exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
  const rent=trips.reduce((a,x)=>a+Number(x.rent),0),diesel=trips.reduce((a,x)=>a+Number(x.diesel||0),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0),totalExpense=exp;
  reportBox.innerHTML=`<div class="report-scroll"><h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
- <div style="text-align:center;font-weight:700">REPORT V4.4</div>
+ <div style="text-align:center;font-weight:700">REPORT V4.5</div>
  <div style="text-align:center" class="muted">${formatReportDate(f)} to ${formatReportDate(t)}</div><hr>
  <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
@@ -435,7 +449,7 @@ async function updateDailySummary(){
     return;
   }
   try{
-    const [trips,expenses]=await Promise.all([getAllTrips(),getAllExpenses()]);
+    const [trips,expenses]=await Promise.all([all('trips'),all('expenses')]);
     const dayTrips=trips.filter(x=>x.date===date);
     const dayExpenses=expenses.filter(x=>x.date===date);
     const rent=dayTrips.reduce((s,x)=>s+Number(x.rent||0),0);
