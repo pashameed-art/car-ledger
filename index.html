@@ -53,7 +53,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script></head>
 <body>
-<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V4.1</span></h1><small>Car income & expense management</small></header>
+<header><h1>🚗 CAR LEDGER <span style="font-size:13px;opacity:.85">V4.2</span></h1><small>Car income & expense management</small></header>
 <nav>
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="trip">Trip</button>
@@ -92,8 +92,9 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 <label>Date</label><input id="tripDate" type="date" required>
 <label>பயணம் செல்லும் இடம் (Place)</label><input id="place" type="text" placeholder="Example: Madurai to Chennai" required>
 <label>Rent Amount</label><input id="rent" type="number" min="0" step="0.01" placeholder="₹" required>
-<label>Diesel</label><input id="tripDiesel" type="number" min="0" step="0.01" value="0" placeholder="₹">
+<label>Diesel (Trip)</label><input id="tripDiesel" type="number" min="0" step="0.01" value="0" placeholder="₹">
 <label>Driver படி</label><input id="driver" type="number" min="0" step="0.01" value="0" placeholder="₹">
+<div class="notice" style="margin-top:8px">Diesel is part of the Trip calculation. It is not a separate Expense entry.</div>
 <div class="card" style="background:#f8fafc;margin-top:12px">
 <div class="row"><div><span class="muted">Balance</span><br><strong id="tripBalance">₹0</strong></div></div>
 </div>
@@ -212,8 +213,8 @@ function del(store,id){return new Promise((res,rej)=>{let r=tx(store,'readwrite'
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 async function refresh(){
  const trips=await all('trips'), exps=await all('expenses');
- const rent=trips.reduce((a,x)=>a+Number(x.rent),0), diesel=trips.reduce((a,x)=>a+Number(x.diesel||0),0), driver=trips.reduce((a,x)=>a+Number(x.driver),0), exp=exps.reduce((a,x)=>a+Number(x.amount),0)+diesel;
- sRent.textContent=money(rent);sDriver.textContent=money(driver);sBalance.textContent=money(rent-diesel-driver);sExpense.textContent=money(exp);sNet.textContent=money(rent-diesel-driver-(exp-diesel));
+ const rent=trips.reduce((a,x)=>a+Number(x.rent),0), diesel=trips.reduce((a,x)=>a+Number(x.diesel||0),0), driver=trips.reduce((a,x)=>a+Number(x.driver),0), exp=exps.reduce((a,x)=>a+Number(x.amount),0);
+ sRent.textContent=money(rent);sDriver.textContent=money(driver);sBalance.textContent=money(rent-diesel-driver);sExpense.textContent=money(exp);sNet.textContent=money(rent-diesel-driver-exp);
 
  const q=(tripSearch?.value||'').trim().toLowerCase(), fd=tripFilterDate?.value||'';
  let shownTrips=trips.filter(x=>(!q||x.place.toLowerCase().includes(q))&&(!fd||x.date===fd)).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
@@ -240,7 +241,7 @@ async function quickToday(){
  const rent=trips.reduce((a,x)=>a+Number(x.rent),0),diesel=trips.reduce((a,x)=>a+Number(x.diesel||0),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),expense=exps.reduce((a,x)=>a+Number(x.amount),0);
  dashSummary.innerHTML=`<hr><b>📅 Today — ${d}</b><div class="grid3" style="margin-top:10px">
  <div><span class="muted">Rent</span><br><b>${money(rent)}</b></div>
- <div><span class="muted">Diesel</span><br><b>${money(diesel)}</b></div>
+ <div><span class="muted">Diesel (Trip)</span><br><b>${money(diesel)}</b></div>
  <div><span class="muted">Driver</span><br><b>${money(driver)}</b></div>
  <div><span class="muted">Balance</span><br><b>${money(rent-diesel-driver)}</b></div>
  <div><span class="muted">Expense</span><br><b>${money(expense)}</b></div>
@@ -303,9 +304,9 @@ async function renderReport(){
  const f=fromDate.value||'0000-00-00',t=toDate.value||'9999-99-99';
  const trips=(await all('trips')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
  const exps=(await all('expenses')).filter(x=>x.date>=f&&x.date<=t).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
- const rent=trips.reduce((a,x)=>a+Number(x.rent),0),diesel=trips.reduce((a,x)=>a+Number(x.diesel||0),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0),totalExpense=exp+diesel;
+ const rent=trips.reduce((a,x)=>a+Number(x.rent),0),diesel=trips.reduce((a,x)=>a+Number(x.diesel||0),0),driver=trips.reduce((a,x)=>a+Number(x.driver),0),exp=exps.reduce((a,x)=>a+Number(x.amount),0),totalExpense=exp;
  reportBox.innerHTML=`<div class="report-scroll"><h2 style="text-align:center;margin:4px 0">CAR LEDGER</h2>
- <div style="text-align:center;font-weight:700">REPORT V4.1</div>
+ <div style="text-align:center;font-weight:700">REPORT V4.2</div>
  <div style="text-align:center" class="muted">${formatReportDate(f)} to ${formatReportDate(t)}</div><hr>
  <table style="width:100%;border-collapse:collapse;margin:8px 0"><tr>
  <th style="text-align:left;border-bottom:1px solid #222;padding:6px">Date</th>
